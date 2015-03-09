@@ -11,6 +11,7 @@ import (
 	"github.com/phyber/negroni-gzip/gzip"
 	"github.com/stretchr/graceful"
 	"github.com/garyburd/redigo/redis"
+  "github.com/soveran/redisurl"
 )
 
 var err error
@@ -75,7 +76,12 @@ func shortURL(w http.ResponseWriter, r *http.Request, db redis.Conn) {
 }
 
 func main() {
-    db, err := redis.Dial("tcp", ":"+os.Getenv("REDIS_PORT"))
+    var db redis.Conn
+    if os.Getenv("DEV") == "true" {
+      db, err = redis.Dial("tcp", ":6379")
+    } else {
+      db, err = redisurl.ConnectToURL(os.Getenv("REDISTOGO_URL "))
+    }
     if err != nil {
       panic(err)
     }

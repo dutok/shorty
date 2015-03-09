@@ -1,3 +1,3 @@
-// A $( document ).ready() block.
 $( document ).ready(function() {
+  $.material.init();
 });
