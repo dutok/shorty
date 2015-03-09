@@ -1,106 +1,144 @@
 package main
 
 import (
-	"net/http"
+	"encoding/json"
 	"fmt"
-  "os"
-  "time"
-  "encoding/json"
 	"github.com/codegangsta/negroni"
+	"github.com/boltdb/bolt"
 	"github.com/gorilla/mux"
 	"github.com/phyber/negroni-gzip/gzip"
 	"github.com/stretchr/graceful"
-	"github.com/garyburd/redigo/redis"
-  "github.com/soveran/redisurl"
+	"net/http"
+  "net/url"
+	"os"
+	"time"
+  "html/template"
 )
+
+type Home struct {
+	UrlCount  int
+}
 
 var err error
 
 type ErrorJson struct {
-  Error `json:"error"`
+	Error `json:"error"`
 }
 
 type Error struct {
-  Type  string `json:"type"`
-  Message  string `json:"message"`
+	Type    string `json:"type"`
+	Message string `json:"message"`
 }
 
 type URLJson struct {
-  URL `json:"url"`
+	URL `json:"url"`
 }
 type URL struct {
-  URL  string `json:"url"`
-  NewURL  string `json:"newurl"`
+	URL    string `json:"url"`
+	NewURL string `json:"newurl"`
 }
 
-func getURL(w http.ResponseWriter, r *http.Request, db redis.Conn) {
-  vars := mux.Vars(r)
-	var url string
-  url, err := redis.String(db.Do("GET", vars["url"]))
-  var b []byte
-  if err != nil {
-    error := Error{"URL", "URL does not exist"}
-    errorjson := ErrorJson{error}
-    b, err = json.Marshal(errorjson)
-    if err != nil {
-      fmt.Println(err)
-      return
+func getURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
+	vars := mux.Vars(r)
+  var url string
+	db.View(func(tx *bolt.Tx) error {
+    b := tx.Bucket([]byte("urls"))
+    v := b.Get([]byte(vars["url"]))
+    if v != nil {
+      url = string(v)
+      http.Redirect(w, r, url, 302)
+    } else {
+      fmt.Fprintf(w, vars["url"] + " is not a valid alias.")
     }
-  } else {
-    urlst := URL{url, vars["url"]}
-    urljson := URLJson{urlst}
-    b, err = json.Marshal(urljson)
-    if err != nil {
-      fmt.Println(err)
-      return
-    }
-  }
-  w.Header().Set("Content-Type", "application/json")
-  fmt.Fprintf(w, string(b))
+    return nil
+  })
 }
 
-func shortURL(w http.ResponseWriter, r *http.Request, db redis.Conn) {
-  vars := mux.Vars(r)
-  newurl := vars["newurl"]
-  url := vars["url"]
-	db.Do("SET", newurl, url)
-  urlst := URL{url, newurl}
-  urljson := URLJson{urlst}
-  b, err := json.Marshal(urljson)
+func shortURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
+  newurl := string(r.FormValue("newurl"))
+  urlvar := string(r.FormValue("url"))
+  url, err := url.QueryUnescape(urlvar)
   if err != nil {
     fmt.Println(err)
-    return
   }
-  w.Header().Set("Content-Type", "application/json")
-  fmt.Fprintf(w, string(b))
+  var jsonr []byte
+	
+  db.View(func(tx *bolt.Tx) error {
+    b := tx.Bucket([]byte("urls"))
+    v := b.Get([]byte(newurl))
+    if v != nil {
+      error := Error{"URL", "Alias already exists."}
+      errorjson := ErrorJson{error}
+      jsonr, err = json.Marshal(errorjson)
+      if err != nil {
+        fmt.Println(err)
+      }
+    } else {
+      db.Update(func(tx *bolt.Tx) error {
+        b := tx.Bucket([]byte("urls"))
+        if err != nil {
+            return fmt.Errorf("bucket: %s", err)
+        }
+        err = b.Put([]byte(newurl), []byte(url))
+        return nil
+      })
+      urlst := URL{url, newurl}
+      urljson := URLJson{urlst}
+      jsonr, err = json.Marshal(urljson)
+      if err != nil {
+        fmt.Println(err)
+      }
+    }
+    return nil
+  })
+  
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, string(jsonr))
 }
 
 func main() {
-    var db redis.Conn
-    if os.Getenv("DEV") == "true" {
-      db, err = redis.Dial("tcp", ":6379")
-    } else {
-      db, err = redisurl.ConnectToURL(os.Getenv("REDISTOGO_URL "))
-    }
+  db, err := bolt.Open("my.db", 0600, nil)
+  if err != nil {
+    fmt.Println(err)
+  }
+  defer db.Close()
+  db.Update(func(tx *bolt.Tx) error {
+    _, err := tx.CreateBucketIfNotExists([]byte("urls"))
     if err != nil {
-      panic(err)
+        return fmt.Errorf("create bucket: %s", err)
     }
-    defer db.Close()
-  
-    r := mux.NewRouter()
-    r.HandleFunc("/u/{url}", func(w http.ResponseWriter, r *http.Request) {
-      getURL(w, r, db)
-    })
-    r.HandleFunc("/s/{url}/{newurl}", func(w http.ResponseWriter, r *http.Request){
-      shortURL(w, r, db)
-    })
-    r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public")))
- 
+    return nil
+  })
 
-    n := negroni.New()
-    n.Use(gzip.Gzip(gzip.BestSpeed))
+	r := mux.NewRouter()
+	r.HandleFunc("/u/{url}", func(w http.ResponseWriter, r *http.Request) {
+		getURL(w, r, db)
+	})
+	r.HandleFunc("/shorten", func(w http.ResponseWriter, r *http.Request) {
+		shortURL(w, r, db)
+	})
+  r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    rootHandler(w, r, db)
+  })
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public")))
 
-    n.UseHandler(r)
+	n := negroni.New()
+	n.Use(gzip.Gzip(gzip.BestSpeed))
 
-    graceful.Run(":"+os.Getenv("PORT"), 10*time.Second, n)
+	n.UseHandler(r)
+
+	graceful.Run(":"+os.Getenv("PORT"), 10*time.Second, n)
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
+	t, _ := template.ParseFiles("./public/index.html")
+  var urlcount int
+  db.View(func(tx *bolt.Tx) error {
+    b := tx.Bucket([]byte("urls"))
+    stats := b.Stats()
+    urlcount = stats.KeyN
+    return nil
+  })
+	home := Home{urlcount}
+	t.Execute(w, home)
 }

@@ -43,6 +43,14 @@
   <body>
     
     <div class="container">
+        <div class="hidden-xs">
+          <br>
+          <br>
+          <br>
+          <br>
+          <br>
+          <br>
+        </div>
         <div class="main center">
             <div class="well">
                 <div class="row">
@@ -60,27 +68,27 @@
                     <div class="col-sm-12">
                         <form class="form-horizontal">
                           <fieldset>
-                              <div class="form-group">
+                              <div id="url-group" class="form-group">
                                   <div class="col-lg-12">
-                                        <label class="control-label">URL Alias</label>
+                                      <label class="control-label">URL Alias</label>
                                       <div class="input-group">
-                                        <span class="input-group-addon">https://s.dutok.me/</span>
-                                        <input type="text" class="form-control" id="newurl" placeholder="Alias">
+                                        <span id="baseurl" class="input-group-addon">https://s.dutok.me/</span>
+                                        <input autocomplete="off" spellcheck='false' type="text" class="form-control" id="newurl" placeholder="Alias" data-hint="Case-sensitive!">
+                                        <span class="input-group-btn">
+                                            <button id="rand" class="btn btn-flat btn-info btn-xs" type="button">Random</button>
+                                        </span>
                                       </div>
                                   </div>
                               </div>
-                              <div class="form-group">
-                                  <div class="col-lg-12">
-                                      <label class="control-label">URL to be shortened</label>
-                                      <div class="input-group">
-                                        <span class="input-group-addon">http(s)://</span>
-                                        <input type="text" class="form-control" id="url" placeholder="URL">
-                                      </div>
-                                  </div>
+                              <div id="newurl-group" class="form-group">
+                                 <div class="col-lg-12">
+                                  <label class="control-label">URL to shorten</label>
+                                      <input autocomplete="off" spellcheck='false' type="text" class="form-control" id="url" placeholder="URL" data-hint="You need to include 'http://'"> 
+                                 </div>
                               </div>
                               <div class="form-group">
                                   <div class="col-lg-10 col-lg-offset-4">
-                                      <button type="submit" class="btn btn-primary">Submit</button>
+                                      <a id="submit" class="btn btn-info">Submit</a>
                                   </div>
                               </div>
                           </fieldset>
@@ -88,9 +96,45 @@
                     </div>
                 </div>
                 <hr id="footer" />
-                <small class="text-muted">Made by <a href="https://dutok.me">dutok</a>.</small>
+                <div class="row">
+                  <div class="col-xs-4">
+                    <small>{{ .UrlCount }} urls</small>
+                  </div>
+                  <div class="col-xs-4 col-xs-offset-4">
+                    <small class="text-muted">Made by <a href="https://dutok.me">dutok</a>.</small>
+                  </div>
+                </div>
             </div>
     	</div>
+    </div>
+    
+    <div id="url-dialog" class="modal fade" tabindex="-1">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h4 class="modal-title text-success">URL shortened</h4>
+          </div>
+          <div class="modal-body">
+            <p><strong id="url-dialog-url"></strong> has been shortened to:</p>
+            <p class="text-center"><input class="input-sm" id="url-dialog-newurl"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="error-dialog" class="modal fade" tabindex="-1">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h4 class="modal-title text-danger">Error</h4>
+          </div>
+          <div class="modal-body">
+            <p id="error-dialog-message"></p>
+          </div>
+        </div>
+      </div>
     </div>
     
    <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
