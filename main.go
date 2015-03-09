@@ -97,7 +97,7 @@ func shortURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 }
 
 func main() {
-  db, err := bolt.Open("./data/my.db", 0600, nil)
+  db, err := bolt.Open("data/my.db", 0600, nil)
   if err != nil {
     fmt.Println(err)
   }
