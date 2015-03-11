@@ -22,6 +22,28 @@ $( document ).ready(function() {
     }
   });
   
+  $( "#analytics" ).click(function() {
+    $('#analytics-dialog').modal('show');
+  });
+  
+  $( "#analytics-get" ).click(function() {
+    var alias = $("#analytics-input-alias");
+    $.getJSON("u/"+alias.val()+"/analytics", function(data) {
+      if ($.isPlainObject(data.error)) {
+        error(data.error.message)
+        $('#analytics-dialog').modal('hide');
+      } else {
+        console.log(data);
+        $('#analytics-dialog-alias').text(data.url.alias);
+        $('#analytics-dialog-url').append(data.url.url);
+        $('#analytics-dialog-count').append(data.url.count);
+        $('#analytics-panel').removeClass("hidden");
+        alias.val('');
+      }
+    });
+    $('#analytics-dialog').modal('show');
+  });
+  
   $( "#url-dialog-newurl" ).click(function() {
     document.getElementById("url-dialog-newurl").focus();
     document.getElementById("url-dialog-newurl").select();

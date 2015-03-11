@@ -75,7 +75,7 @@
                                         <span id="baseurl" class="input-group-addon">https://s.dutok.me/u/</span>
                                         <input autocomplete="off" spellcheck='false' type="text" class="form-control" id="newurl" placeholder="Alias" data-hint="Case-sensitive!">
                                         <span class="input-group-btn">
-                                            <button id="rand" class="btn btn-flat btn-info btn-xs" type="button">Random</button>
+                                            <a id="rand" href="javascript:;" class="btn btn-flat btn-info btn-sm btn-block">Random</a>
                                         </span>
                                       </div>
                                   </div>
@@ -98,7 +98,7 @@
                 <hr id="footer" />
                 <div class="row">
                   <div class="col-xs-4">
-                    <small>{{ .UrlCount }} urls</small>
+                    <small><a href="javascript:;" id="analytics">analytics</a></small>
                   </div>
                   <div class="col-xs-4 col-xs-offset-4">
                     <small><a href="https://dutok.me">author</a>  &nbsp;/&nbsp;  <a href="https://github.com/dutok/shorty">source</a></small>
@@ -132,6 +132,38 @@
           </div>
           <div class="modal-body">
             <p id="error-dialog-message"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="analytics-dialog" class="modal fade" tabindex="-1">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h4 class="modal-title">Analytics</h4>
+          </div>
+          <div class="modal-body">
+            <p><strong>Total URLs:</strong> {{ .UrlCount }}</p>
+            <p><strong>Total redirects:</strong> {{ .TotalCount }}</p>
+            <br>
+            <div class="form-group">
+                <div class="input-group">
+                    <label class="control-label" for="analytics-input-alias">Specific URL stats</label>
+                    <input id="analytics-input-alias" type="text" class="form-control" placeholder="Alias">
+                    <span class="input-group-btn">
+                        <button id="analytics-get" class="btn btn-primary btn-sm" type="button">Get</button>
+                    </span>
+                </div>
+            </div>
+            <div id="analytics-panel" class="panel panel-default hidden">
+                <div id="analytics-dialog-alias" class="panel-heading"></div>
+                <div class="panel-body">
+                  <p id="analytics-dialog-url"><strong>URL:</strong> </p>
+                  <p id="analytics-dialog-count"><strong>Redirects:</strong> </p>
+                </div>
+            </div>
           </div>
         </div>
       </div>
