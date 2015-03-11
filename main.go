@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/negroni"
@@ -12,14 +13,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-  "errors"
+	"strconv"
 	"time"
-  "strconv"
 )
 
 type Stats struct {
-	UrlCount int
-  TotalCount string
+	UrlCount   int
+	TotalCount string
 }
 
 var err error
@@ -37,24 +37,24 @@ type URLJson struct {
 	URL `json:"url"`
 }
 type URL struct {
-	URL    string `json:"url"`
-	Alias  string `json:"alias"`
-  Count  string `json:"count"`
+	URL   string `json:"url"`
+	Alias string `json:"alias"`
+	Count string `json:"count"`
 }
 
 func getURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 	vars := mux.Vars(r)
 	var url string
-  alias := vars["url"]
+	alias := vars["url"]
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("urls"))
 		v := b.Get([]byte(alias))
 		if v != nil {
 			url = string(v)
-      err := incrementCount(alias, db)
-      if err != nil {
-        fmt.Println(err)
-      }
+			err := incrementCount(alias, db)
+			if err != nil {
+				fmt.Println(err)
+			}
 			http.Redirect(w, r, url, 302)
 		} else {
 			fmt.Fprintf(w, alias+" is not a valid alias.")
@@ -89,7 +89,7 @@ func shortURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 					return fmt.Errorf("bucket: %s", err)
 				}
 				err = b.Put([]byte(newurl), []byte(url))
-        err = b.Put([]byte(newurl+".count"), []byte("0"))
+				err = b.Put([]byte(newurl+".count"), []byte("0"))
 				return nil
 			})
 			urlst := URL{url, newurl, "0"}
@@ -108,21 +108,21 @@ func shortURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 func getAnalytics(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 	vars := mux.Vars(r)
-  var jsonr []byte
-  url := vars["url"]
+	var jsonr []byte
+	url := vars["url"]
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("urls"))
 		v := b.Get([]byte(url))
 		if v != nil {
-      count := b.Get([]byte(url+".count"))
-      urlst := URL{string(v), url, string(count)}
+			count := b.Get([]byte(url + ".count"))
+			urlst := URL{string(v), url, string(count)}
 			urljson := URLJson{urlst}
 			jsonr, err = json.Marshal(urljson)
 			if err != nil {
 				fmt.Println(err)
 			}
 		} else {
-      error := Error{"URL", vars["url"]+" is not a valid alias."}
+			error := Error{"URL", vars["url"] + " is not a valid alias."}
 			errorjson := ErrorJson{error}
 			jsonr, err = json.Marshal(errorjson)
 			if err != nil {
@@ -131,8 +131,8 @@ func getAnalytics(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		}
 		return nil
 	})
-  
-  w.Header().Set("Content-Type", "application/json")
+
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, string(jsonr))
 }
 
@@ -153,7 +153,7 @@ func main() {
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-    _, err = tx.CreateBucketIfNotExists([]byte("stats"))
+		_, err = tx.CreateBucketIfNotExists([]byte("stats"))
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
@@ -164,7 +164,7 @@ func main() {
 	r.HandleFunc("/u/{url}", func(w http.ResponseWriter, r *http.Request) {
 		getURL(w, r, db)
 	})
-  r.HandleFunc("/u/{url}/analytics", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/u/{url}/analytics", func(w http.ResponseWriter, r *http.Request) {
 		getAnalytics(w, r, db)
 	})
 	r.HandleFunc("/shorten", func(w http.ResponseWriter, r *http.Request) {
@@ -186,69 +186,69 @@ func main() {
 func rootHandler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 	t, _ := template.ParseFiles("./public/index.html")
 	var urlcount int
-  var totalcount []byte
+	var totalcount []byte
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("urls"))
 		stats := b.Stats()
 		urlcount = stats.KeyN / 2
-    
-    b = tx.Bucket([]byte("stats"))
+
+		b = tx.Bucket([]byte("stats"))
 		totalcount = b.Get([]byte("totalcount"))
 		return nil
 	})
-  stats := Stats{urlcount, string(totalcount)}
+	stats := Stats{urlcount, string(totalcount)}
 	t.Execute(w, stats)
 }
 
-func incrementCount(url string, db *bolt.DB) (error) {
-  var count []byte
-  var totalcount []byte
-  db.Update(func(tx *bolt.Tx) error {
-    b := tx.Bucket([]byte("urls"))
-		count = b.Get([]byte(url+".count"))
+func incrementCount(url string, db *bolt.DB) error {
+	var count []byte
+	var totalcount []byte
+	db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("urls"))
+		count = b.Get([]byte(url + ".count"))
 		if count == nil {
-      err := errors.New("Alias does not exist.")
-      return err
-    }
-    
-    b = tx.Bucket([]byte("stats"))
+			err := errors.New("Alias does not exist.")
+			return err
+		}
+
+		b = tx.Bucket([]byte("stats"))
 		totalcount = b.Get([]byte("totalcount"))
 		if totalcount == nil {
-      err = b.Put([]byte("totalcount"), []byte("0"))
-      if err != nil {
-        fmt.Println(err)
-      }
-    } else {
-      newcount, err := incStr((string(totalcount)))
-      if err != nil {
-        fmt.Println(err)
-      }
-      err = b.Put([]byte("totalcount"), []byte(newcount))
-      if err != nil {
-        fmt.Println(err)
-      }
-    }
-    
-    b = tx.Bucket([]byte("urls"))
-    newcount, err := incStr((string(count)))
-    if err != nil {
-      fmt.Println(err)
-    }
-    err = b.Put([]byte(url+".count"), []byte(newcount))
-    if err != nil {
-      fmt.Println(err)
-    }
-    
-    return nil
-  })
-  return nil
+			err = b.Put([]byte("totalcount"), []byte("0"))
+			if err != nil {
+				fmt.Println(err)
+			}
+		} else {
+			newcount, err := incStr((string(totalcount)))
+			if err != nil {
+				fmt.Println(err)
+			}
+			err = b.Put([]byte("totalcount"), []byte(newcount))
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		b = tx.Bucket([]byte("urls"))
+		newcount, err := incStr((string(count)))
+		if err != nil {
+			fmt.Println(err)
+		}
+		err = b.Put([]byte(url+".count"), []byte(newcount))
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		return nil
+	})
+	return nil
 }
 
 func incStr(count string) (string, error) {
-  i, err := strconv.Atoi(count)
-  if err != nil {
-    return count, err
-  }
-  t := i + 1
-  return strconv.Itoa(t), nil
+	i, err := strconv.Atoi(count)
+	if err != nil {
+		return count, err
+	}
+	t := i + 1
+	return strconv.Itoa(t), nil
 }
