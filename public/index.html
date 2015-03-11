@@ -73,7 +73,7 @@
                                       <label class="control-label">URL Alias</label>
                                       <div class="input-group">
                                         <span id="baseurl" class="input-group-addon">https://s.dutok.me/u/</span>
-                                        <input autocomplete="off" spellcheck='false' type="text" class="form-control" id="newurl" placeholder="Alias" data-hint="Case-sensitive!">
+                                        <input autocorrect="off" autocapitalize="off" spellcheck='false' type="text" class="form-control" id="newurl" placeholder="Alias" data-hint="Case-sensitive!">
                                         <span class="input-group-btn">
                                             <a id="rand" href="javascript:;" class="btn btn-flat btn-info btn-sm">Random</a>
                                         </span>
@@ -83,7 +83,7 @@
                               <div id="newurl-group" class="form-group">
                                  <div class="col-lg-12">
                                   <label class="control-label">URL to shorten</label>
-                                      <input autocomplete="off" spellcheck='false' type="text" class="form-control" id="url" placeholder="URL" data-hint="You need to include 'http://'"> 
+                                      <input autocorrect="off" autocapitalize="off" spellcheck='false' type="url" class="form-control" id="url" placeholder="URL" data-hint="You need to include 'http://'"> 
                                  </div>
                               </div>
                               <div class="form-group">
@@ -151,7 +151,7 @@
             <div class="form-group">
                 <div class="input-group">
                     <label class="control-label" for="analytics-input-alias">Specific URL stats</label>
-                    <input id="analytics-input-alias" type="text" class="form-control" placeholder="Alias">
+                    <input autocorrect="off" autocapitalize="off" spellcheck='false' id="analytics-input-alias" type="text" class="form-control" placeholder="Alias">
                     <span class="input-group-btn">
                         <button id="analytics-get" class="btn btn-primary btn-sm" type="button">Get</button>
                     </span>
