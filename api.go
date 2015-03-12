@@ -44,7 +44,7 @@ func getURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 			}
 			http.Redirect(w, r, *url.Url, 302)
 		} else {
-			fmt.Fprintf(w, alias+" is not a valid alias.")
+      http.Redirect(w, r, "/#404", 302)
 		}
 		return nil
 	})

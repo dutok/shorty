@@ -1,5 +1,6 @@
 $( document ).ready(function() {
   $.material.init();
+  loadRoute();
   
   $( "#submit" ).click(function() {
     var url = $('#url');
@@ -55,27 +56,37 @@ $( document ).ready(function() {
     $('#newurl').focus().val(key);
   });
   
-  function isUrl(s) {
-    var regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
-    return regexp.test(s);
-  }
-  
-  function randKey() {
-    var n = 5
-    var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for(var i=0; i < n; i++)
-    {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-
-    return text;
-  }
-  
 });
+
+function loadRoute(){
+  if(window.location.href.indexOf("404") > -1) {
+    notFound();
+  }
+}
 
 function error(message){
   $('#error-dialog-message').text(message);
   $('#error-dialog').modal('show');
+}
+
+function notFound(){
+  $('#notfound-dialog').modal('show');
+}
+
+function isUrl(s) {
+  var regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
+  return regexp.test(s);
+}
+
+function randKey() {
+  var n = 5
+  var text = '';
+  var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  for(var i=0; i < n; i++)
+  {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+
+  return text;
 }
