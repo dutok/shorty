@@ -61,10 +61,10 @@ func incStr(count string) (string, error) {
 }
 
 func loadVersion() string {
-	out, err := exec.Command("git rev-parse HEAD").Output()
+	out, err := exec.Command("sh", "-c", "git describe --long --tags ").Output()
 	if err != nil {
 		fmt.Println(err)
 		return ""
 	}
-	return string([]rune(string(out))[0:7])
+  return string(out)
 }
