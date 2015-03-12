@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/gorilla/mux"
+	"html/template"
 	"net/http"
 	"net/url"
-  "html/template"
 )
 
 func loadRoutes(r *mux.Router, db *bolt.DB, shorty Shorty) {

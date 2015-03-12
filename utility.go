@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/boltdb/bolt"
+	"os/exec"
 	"strconv"
-  "os/exec"
 )
 
 func incrementCount(alias string, db *bolt.DB) error {
@@ -60,11 +60,11 @@ func incStr(count string) (string, error) {
 	return strconv.Itoa(t), nil
 }
 
-func loadVersion() (string) {
-  out, err := exec.Command("sh","-c","git rev-parse HEAD").Output()
+func loadVersion() string {
+	out, err := exec.Command("sh", "-c", "git rev-parse HEAD").Output()
 	if err != nil {
 		fmt.Println(err)
-    return ""
+		return ""
 	}
-  return string([]rune(string(out))[0:7])
+	return string([]rune(string(out))[0:7])
 }

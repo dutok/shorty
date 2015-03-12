@@ -14,11 +14,11 @@ import (
 type Stats struct {
 	UrlCount   *int
 	TotalCount *string
-  Shorty
+	Shorty
 }
 
 type Shorty struct {
-  Version  string
+	Version string
 }
 
 var err error
@@ -41,8 +41,8 @@ type URL struct {
 }
 
 func main() {
-  version := loadVersion()
-  shorty := Shorty{version}
+	version := loadVersion()
+	shorty := Shorty{version}
 	var file string
 	if os.Getenv("DEV") == "true" {
 		file = "data/my.db"
