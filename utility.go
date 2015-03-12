@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	"strconv"
+  "os/exec"
 )
 
 func incrementCount(alias string, db *bolt.DB) error {
@@ -57,4 +58,13 @@ func incStr(count string) (string, error) {
 	}
 	t := i + 1
 	return strconv.Itoa(t), nil
+}
+
+func loadVersion() (string) {
+  out, err := exec.Command("sh","-c","git rev-parse HEAD").Output()
+	if err != nil {
+		fmt.Println(err)
+    return ""
+	}
+  return string([]rune(string(out))[0:7])
 }

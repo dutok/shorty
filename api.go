@@ -7,9 +7,10 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/url"
+  "html/template"
 )
 
-func loadRoutes(r *mux.Router, db *bolt.DB) {
+func loadRoutes(r *mux.Router, db *bolt.DB, shorty Shorty) {
 	r.HandleFunc("/u/{url}", func(w http.ResponseWriter, r *http.Request) {
 		getURL(w, r, db)
 	})
@@ -20,7 +21,7 @@ func loadRoutes(r *mux.Router, db *bolt.DB) {
 		shortURL(w, r, db)
 	})
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		rootHandler(w, r, db)
+		rootHandler(w, r, db, shorty)
 	})
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public")))
 }
@@ -111,4 +112,22 @@ func getAnalytics(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, string(jsonr))
+}
+
+func rootHandler(w http.ResponseWriter, r *http.Request, db *bolt.DB, shorty Shorty) {
+	t, _ := template.ParseFiles("./public/index.html")
+	var urlcount int
+	var totalcount []byte
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("urls"))
+		stats := b.Stats()
+		urlcount = stats.KeyN / 2
+
+		b = tx.Bucket([]byte("stats"))
+		totalcount = b.Get([]byte("totalcount"))
+		return nil
+	})
+	newtotalcount := string(totalcount)
+	stats := Stats{&urlcount, &newtotalcount, shorty}
+	t.Execute(w, stats)
 }
