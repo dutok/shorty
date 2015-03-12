@@ -61,7 +61,7 @@ func incStr(count string) (string, error) {
 }
 
 func loadVersion() string {
-	out, err := exec.Command("sh", "-c", "git rev-parse HEAD").Output()
+	out, err := exec.Command("git rev-parse HEAD").Output()
 	if err != nil {
 		fmt.Println(err)
 		return ""
