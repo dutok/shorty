@@ -43,7 +43,7 @@ type URL struct {
 func getURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 	vars := mux.Vars(r)
 	alias := vars["url"]
-  var url *URLJson
+	var url *URLJson
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("urls"))
 		v := b.Get([]byte(alias))
@@ -52,10 +52,10 @@ func getURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 			if err != nil {
 				fmt.Println(err)
 			}
-      err = json.Unmarshal(v, &url)
-      if err != nil {
-        fmt.Println("error:", err)
-      }
+			err = json.Unmarshal(v, &url)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
 			http.Redirect(w, r, *url.Url, 302)
 		} else {
 			fmt.Fprintf(w, alias+" is not a valid alias.")
@@ -84,17 +84,17 @@ func shortURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 				fmt.Println(err)
 			}
 		} else {
-      count := 0
-      urlst := URL{&url, &count}
+			count := 0
+			urlst := URL{&url, &count}
 			urljson := URLJson{urlst}
 			jsonr, err = json.Marshal(urljson)
 			if err != nil {
 				fmt.Println(err)
-        return nil
+				return nil
 			}
 			db.Update(func(tx *bolt.Tx) error {
-        b := tx.Bucket([]byte("urls"))
-        return b.Put([]byte(newurl), jsonr)
+				b := tx.Bucket([]byte("urls"))
+				return b.Put([]byte(newurl), jsonr)
 			})
 		}
 		return nil
@@ -188,30 +188,30 @@ func rootHandler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		totalcount = b.Get([]byte("totalcount"))
 		return nil
 	})
-  newtotalcount := string(totalcount)
+	newtotalcount := string(totalcount)
 	stats := Stats{&urlcount, &newtotalcount}
 	t.Execute(w, stats)
 }
 
-func incrementCount(alias string, db *bolt.DB) (error) {
+func incrementCount(alias string, db *bolt.DB) error {
 	var totalcount []byte
-  var url *URLJson
+	var url *URLJson
 	db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("urls"))
-    urljson := b.Get([]byte(alias))
-    err := json.Unmarshal(urljson, &url)
-    if err != nil {
-      fmt.Println("error:", err)
-    }
-    count := *url.Count + 1
-    *url.Count = count
-    
-    urljson, err = json.Marshal(&url)
-    if err != nil {
-      fmt.Println(err)
-      return nil
-    }
-    err = b.Put([]byte(alias), urljson)
+		urljson := b.Get([]byte(alias))
+		err := json.Unmarshal(urljson, &url)
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		count := *url.Count + 1
+		*url.Count = count
+
+		urljson, err = json.Marshal(&url)
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
+		err = b.Put([]byte(alias), urljson)
 
 		b = tx.Bucket([]byte("stats"))
 		totalcount = b.Get([]byte("totalcount"))
