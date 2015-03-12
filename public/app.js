@@ -35,9 +35,9 @@ $( document ).ready(function() {
         $('#analytics-dialog').modal('hide');
       } else {
         console.log(data);
-        $('#analytics-dialog-alias').text(data.url.alias);
-        $('#analytics-dialog-url').append(data.url.url);
-        $('#analytics-dialog-count').append(data.url.count);
+        $('#analytics-dialog-alias').text(alias.val());
+        $('#analytics-dialog-url').text(data.url.url);
+        $('#analytics-dialog-count').text(data.url.count);
         $('#analytics-panel').removeClass("hidden");
         alias.val('');
       }

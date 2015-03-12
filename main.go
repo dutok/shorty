@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/codegangsta/negroni"
@@ -18,8 +17,8 @@ import (
 )
 
 type Stats struct {
-	UrlCount   int
-	TotalCount string
+	UrlCount   *int
+	TotalCount *string
 }
 
 var err error
@@ -37,25 +36,27 @@ type URLJson struct {
 	URL `json:"url"`
 }
 type URL struct {
-	URL   string `json:"url"`
-	Alias string `json:"alias"`
-	Count string `json:"count"`
+	Url   *string `json:"url"`
+	Count *int    `json:"count"`
 }
 
 func getURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 	vars := mux.Vars(r)
-	var url string
 	alias := vars["url"]
+  var url *URLJson
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("urls"))
 		v := b.Get([]byte(alias))
 		if v != nil {
-			url = string(v)
 			err := incrementCount(alias, db)
 			if err != nil {
 				fmt.Println(err)
 			}
-			http.Redirect(w, r, url, 302)
+      err = json.Unmarshal(v, &url)
+      if err != nil {
+        fmt.Println("error:", err)
+      }
+			http.Redirect(w, r, *url.Url, 302)
 		} else {
 			fmt.Fprintf(w, alias+" is not a valid alias.")
 		}
@@ -83,21 +84,18 @@ func shortURL(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 				fmt.Println(err)
 			}
 		} else {
-			db.Update(func(tx *bolt.Tx) error {
-				b := tx.Bucket([]byte("urls"))
-				if err != nil {
-					return fmt.Errorf("bucket: %s", err)
-				}
-				err = b.Put([]byte(newurl), []byte(url))
-				err = b.Put([]byte(newurl+".count"), []byte("0"))
-				return nil
-			})
-			urlst := URL{url, newurl, "0"}
+      count := 0
+      urlst := URL{&url, &count}
 			urljson := URLJson{urlst}
 			jsonr, err = json.Marshal(urljson)
 			if err != nil {
 				fmt.Println(err)
+        return nil
 			}
+			db.Update(func(tx *bolt.Tx) error {
+        b := tx.Bucket([]byte("urls"))
+        return b.Put([]byte(newurl), jsonr)
+			})
 		}
 		return nil
 	})
@@ -114,13 +112,7 @@ func getAnalytics(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		b := tx.Bucket([]byte("urls"))
 		v := b.Get([]byte(url))
 		if v != nil {
-			count := b.Get([]byte(url + ".count"))
-			urlst := URL{string(v), url, string(count)}
-			urljson := URLJson{urlst}
-			jsonr, err = json.Marshal(urljson)
-			if err != nil {
-				fmt.Println(err)
-			}
+			jsonr = v
 		} else {
 			error := Error{"URL", vars["url"] + " is not a valid alias."}
 			errorjson := ErrorJson{error}
@@ -196,20 +188,30 @@ func rootHandler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		totalcount = b.Get([]byte("totalcount"))
 		return nil
 	})
-	stats := Stats{urlcount, string(totalcount)}
+  newtotalcount := string(totalcount)
+	stats := Stats{&urlcount, &newtotalcount}
 	t.Execute(w, stats)
 }
 
-func incrementCount(url string, db *bolt.DB) error {
-	var count []byte
+func incrementCount(alias string, db *bolt.DB) (error) {
 	var totalcount []byte
+  var url *URLJson
 	db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("urls"))
-		count = b.Get([]byte(url + ".count"))
-		if count == nil {
-			err := errors.New("Alias does not exist.")
-			return err
-		}
+    urljson := b.Get([]byte(alias))
+    err := json.Unmarshal(urljson, &url)
+    if err != nil {
+      fmt.Println("error:", err)
+    }
+    count := *url.Count + 1
+    *url.Count = count
+    
+    urljson, err = json.Marshal(&url)
+    if err != nil {
+      fmt.Println(err)
+      return nil
+    }
+    err = b.Put([]byte(alias), urljson)
 
 		b = tx.Bucket([]byte("stats"))
 		totalcount = b.Get([]byte("totalcount"))
@@ -227,16 +229,6 @@ func incrementCount(url string, db *bolt.DB) error {
 			if err != nil {
 				fmt.Println(err)
 			}
-		}
-
-		b = tx.Bucket([]byte("urls"))
-		newcount, err := incStr((string(count)))
-		if err != nil {
-			fmt.Println(err)
-		}
-		err = b.Put([]byte(url+".count"), []byte(newcount))
-		if err != nil {
-			fmt.Println(err)
 		}
 
 		return nil
