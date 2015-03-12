@@ -15,3 +15,7 @@
 #baseurl {
   padding: 0;
 }
+
+#url-dialog-newurl {
+  width: 100%;
+}

@@ -4,6 +4,7 @@ $( document ).ready(function() {
   $( "#submit" ).click(function() {
     var url = $('#url');
     var newurl = $('#newurl');
+    var link = $('#baseurl').text() + newurl.val();
     if (isUrl(url.val())){
       var posturl = "shorten?url="+encodeURIComponent(url.val())+"&newurl="+newurl.val()
       $.getJSON(posturl, function(data) {
@@ -11,7 +12,7 @@ $( document ).ready(function() {
           error(data.error.message)
         } else {
           $('#url-dialog-url').text(url.val());
-          $('#url-dialog-newurl').val($('#baseurl').text() + newurl.val());
+          $('#url-dialog-newurl').val(link);
           $('#url-dialog').modal('show');
           url.val('');
           newurl.val('');
