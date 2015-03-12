@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+var (
+  version = "v0.2-beta"
+)
+
 type Stats struct {
 	UrlCount   *int
 	TotalCount *string
@@ -41,7 +45,6 @@ type URL struct {
 }
 
 func main() {
-	version := loadVersion()
 	shorty := Shorty{version}
 	var file string
 	if os.Getenv("DEV") == "true" {

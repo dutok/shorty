@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/boltdb/bolt"
-	"os/exec"
 	"strconv"
 )
 
@@ -58,13 +57,4 @@ func incStr(count string) (string, error) {
 	}
 	t := i + 1
 	return strconv.Itoa(t), nil
-}
-
-func loadVersion() string {
-	out, err := exec.Command("sh", "-c", "git describe --long --tags ").Output()
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
-  return string(out)
 }
